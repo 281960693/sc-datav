@@ -1,0 +1,1262 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Demo1 Vanilla（无 React 版本）</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #fff5e8;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+          "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      }
+
+      #app {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+      }
+
+      #three {
+        position: absolute;
+        inset: 0;
+      }
+
+      #panel {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .panel-header {
+        position: relative;
+        width: 100%;
+        height: 80px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 5;
+        pointer-events: none;
+      }
+
+      .panel-title {
+        font-size: 36px;
+        letter-spacing: 8px;
+        font-weight: 700;
+        background: linear-gradient(to bottom, #ea580c, #ff9100);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-align: center;
+        text-shadow: 0 8px 10px rgba(255, 145, 0, 0.8);
+      }
+
+      .panel-title::after {
+        content: "SICHUAN SMART BRAIN";
+        display: block;
+        font-size: 12px;
+        letter-spacing: 12px;
+        text-align: center;
+        color: rgba(255, 145, 0, 0.6);
+        margin-top: -5px;
+        -webkit-text-fill-color: rgba(255, 145, 0, 0.6);
+      }
+
+      .github-link {
+        position: absolute;
+        right: 32px;
+        top: 12px;
+        width: 36px;
+        height: 36px;
+        font-size: 36px;
+        pointer-events: auto;
+      }
+
+      .github-link svg {
+        display: block;
+      }
+
+      .grid {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-rows: repeat(6, minmax(0, 1fr));
+        gap: 20px;
+        padding: 20px;
+      }
+
+      .card {
+        position: relative;
+        background: rgba(255, 245, 232, 0.65);
+        border: 1px solid rgba(255, 145, 0, 0.3);
+        padding: 15px;
+        backdrop-filter: blur(4px);
+        border-radius: 4px;
+        display: flex;
+        flex-direction: column;
+        pointer-events: auto;
+        z-index: 10;
+        transform: translate3d(0, 0, 0);
+        opacity: 0;
+      }
+
+      .card-title {
+        font-size: 18px;
+        margin-bottom: 10px;
+        padding-left: 10px;
+        border-left: 4px solid #fdb961;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: #5a4a42;
+      }
+
+      .card-title span {
+        font-size: 10px;
+        color: rgba(0, 0, 0, 0.4);
+        font-weight: normal;
+      }
+
+      .chart {
+        flex: 1;
+        min-height: 0;
+      }
+
+      #footer {
+        position: absolute;
+        bottom: 0;
+        height: 100px;
+        width: 100%;
+        pointer-events: none;
+      }
+
+      #footer .buttons {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 600px;
+        height: 80px;
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+        gap: 30px;
+        z-index: 10;
+        padding-bottom: 20px;
+        pointer-events: auto;
+      }
+
+      #footer button {
+        position: relative;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(234, 88, 12, 0.2);
+        color: #d35400;
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      #footer button.active {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #ff6715 0%, #ff8c00 100%);
+        color: white;
+        border: none;
+      }
+
+      #tooltip {
+        position: absolute;
+        left: 0;
+        top: 0;
+        transform: translate(-9999px, -9999px);
+        background: rgba(255, 245, 232, 0.7);
+        backdrop-filter: blur(10px);
+        border-radius: 8px;
+        padding: 12px 16px;
+        color: #656565;
+        font-size: 12px;
+        pointer-events: none;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        min-width: 140px;
+      }
+
+      #tooltip .city {
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: #ea580c;
+      }
+
+      #tooltip .row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 4px;
+      }
+
+      #tooltip .row:last-child {
+        margin-bottom: 0;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="app">
+      <div id="three"></div>
+
+      <div id="panel">
+        <div class="panel-header" id="panelHeader">
+          <div class="panel-title">四川省智慧城市数据大脑</div>
+          <a
+            class="github-link"
+            href="https://github.com/knight-L/datav"
+            target="_blank"
+            rel="noreferrer">
+            <svg width="1em" height="1em" viewBox="0 0 22 22" version="1.1">
+              <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                <g transform="translate(-262.000000, -2480.000000)" fill="#000">
+                  <g transform="translate(252.000000, 2470.000000)">
+                    <path
+                      d="M29.9006449,27.904446 C28.5016932,29.8668872 26.6944882,31.2248797 24.4790301,31.9784237 C24.2211218,32.0272886 24.0325745,31.9931534 23.9133882,31.876018 C23.7942019,31.7588827 23.7346171,31.6119968 23.7346338,31.4353603 L23.7346338,28.3376019 C23.7346338,27.3880159 23.4865017,26.6930482 22.9902375,26.2526987 C23.5347812,26.1938141 24.024319,26.1058042 24.458851,25.9886688 C24.893383,25.8715335 25.3422785,25.680801 25.8055376,25.4164714 C26.2687966,25.1521418 26.6556591,24.8267354 26.9661251,24.4402521 C27.276591,24.0537688 27.5296112,23.5398222 27.7251857,22.8984123 C27.9207602,22.2570024 28.0185475,21.5203805 28.0185475,20.6885464 C28.0185475,19.504056 27.6414612,18.4959023 26.8872886,17.6640854 C27.240536,16.7733669 27.2023419,15.7752328 26.7727063,14.6696833 C26.5050218,14.5813565 26.1181593,14.6352226 25.6121189,14.8312818 C25.1060784,15.0273409 24.6669591,15.2428141 24.2947609,15.4777015 L23.7502256,15.8300324 C22.8622108,15.5757225 21.9454689,15.4485675 21,15.4485675 C20.0545311,15.4485675 19.1377892,15.5757225 18.2497744,15.8300324 C18.0969813,15.7223001 17.8940788,15.5901353 17.641067,15.433538 C17.3880551,15.2769408 16.9892689,15.0884007 16.4447085,14.8679176 C15.9001481,14.6474346 15.4894467,14.5813479 15.2126043,14.6696576 C14.7921266,15.7758408 14.7588206,16.7739749 15.1126863,17.6640597 C14.3585137,18.4958938 13.9814275,19.5040475 13.9814275,20.6885208 C13.9814275,21.5203548 14.0792147,22.2544676 14.2747892,22.8908591 C14.4703637,23.5272505 14.720944,24.0411971 15.0265302,24.4326988 C15.3321164,24.8242005 15.7165391,25.1521076 16.1797981,25.41642 C16.6430571,25.6807325 17.0919527,25.871465 17.5264847,25.9886174 C17.9610167,26.1057699 18.4505545,26.1937799 18.9950982,26.2526473 C18.6131238,26.60467 18.3790461,27.1085884 18.292865,27.7644025 C18.0924107,27.8621152 17.8775846,27.935404 17.6483866,27.984269 C17.4191886,28.0331339 17.1469167,28.0575663 16.831571,28.0575663 C16.5162253,28.0575663 16.203612,27.9523346 15.8937309,27.74187 C15.5838498,27.5314053 15.3882753,27.2542929 15.3069992,26.9105325 L15.0847085,25.9480418 C13.7670852,25.5077088 12.6692227,24.6807714 11.7910909,23.4671972 C10.9129591,22.253623 10.4738892,20.8374134 10.4738892,19.2185675 C10.4738892,17.0994607 11.1851535,15.2949769 12.6077007,13.805071 C14.0302479,12.3151651 15.7850024,11.5702132 17.8729733,11.5702132 C19.9609442,11.5702132 21.7156987,12.3151651 23.1382459,13.805071 C24.5607931,15.2949769 25.2720574,17.0994607 25.2720574,19.2185675 C25.2720574,20.4645546 25.0172863,21.6146491 24.507744,22.668851 C23.9982017,23.7230529 23.3216215,24.5597762 22.4780033,25.1790341 C21.6343851,25.798292 20.6733845,26.1889217 19.594999,26.3519351 C19.9609442,26.7728663 20.1571442,27.2798337 20.183599,27.8728355 L20.183599,31.4353603 C20.183599,31.6119968 20.1240142,31.7588827 20.0048279,31.876018 C19.8856416,31.9931534 19.6970943,32.0272886 19.439186,31.9784237 C17.2237279,31.2248797 15.4165229,29.8668872 14.0175712,27.904446 L14.0175712,27.904446 Z" />
+                  </g>
+                </g>
+              </g>
+            </svg>
+          </a>
+        </div>
+
+        <div class="grid" id="grid">
+          <div
+            class="card"
+            id="card1"
+            style="grid-area: 1 / 1 / 3 / 2; transform: translateX(-60px)">
+            <div class="card-title">
+              2025年规模指标分析<span>INDICATOR ANALYSIS</span>
+            </div>
+            <div class="chart" id="chart1"></div>
+          </div>
+          <div
+            class="card"
+            id="card2"
+            style="grid-area: 3 / 1 / 5 / 2; transform: translateX(-60px)">
+            <div class="card-title">企业税收分析<span>TAX ANALYSIS</span></div>
+            <div class="chart" id="chart2"></div>
+          </div>
+          <div
+            class="card"
+            id="card3"
+            style="grid-area: 5 / 1 / 7 / 2; transform: translateX(-60px)">
+            <div class="card-title">
+              行政处罚信息<span>PENALTY INFORMATION</span>
+            </div>
+            <div class="chart" id="chart3"></div>
+          </div>
+          <div
+            class="card"
+            id="card4"
+            style="grid-area: 1 / 4 / 3 / 5; transform: translateX(60px)">
+            <div class="card-title">
+              企业收益总数统计<span>REVENUE STATISTICS</span>
+            </div>
+            <div class="chart" id="chart4"></div>
+          </div>
+          <div
+            class="card"
+            id="card5"
+            style="grid-area: 3 / 4 / 5 / 5; transform: translateX(60px)">
+            <div class="card-title">
+              企业能耗分析<span>ENERGY CONSUMPTION</span>
+            </div>
+            <div class="chart" id="chart5"></div>
+          </div>
+          <div
+            class="card"
+            id="card6"
+            style="grid-area: 5 / 4 / 7 / 5; transform: translateX(60px)">
+            <div class="card-title">企业税收分析<span>TAX ANALYSIS</span></div>
+            <div class="chart" id="chart6"></div>
+          </div>
+        </div>
+
+        <div id="footer">
+          <div class="buttons" id="buttons"></div>
+        </div>
+      </div>
+
+      <div id="tooltip">
+        <div class="city" id="tooltipCity"></div>
+        <div class="row"><span>人口:</span><span id="tooltipPop"></span></div>
+        <div class="row"><span>GDP:</span><span id="tooltipGdp"></span></div>
+        <div class="row"><span>面积:</span><span id="tooltipArea"></span></div>
+      </div>
+    </div>
+
+    <script type="module">
+      /**
+       * Demo1 迁移为普通 HTML 的目标：
+       * 1) 不使用 React / R3F / styled-components
+       * 2) 用最少的“工程化概念”复刻 Demo1 的主要功能点
+       * 3) 每个功能点旁边都写清楚“做什么 / 为什么这么做 / 对应原项目哪一块”
+       *
+       * 依赖加载策略（你选择的是“CDN 自包含”）：
+       * - three.js & examples：unpkg ESM
+       * - d3-geo：jsdelivr +esm
+       * - echarts：jsdelivr ESM
+       * - keli-heatmap：esm.sh
+       */
+
+      import * as THREE from "https://unpkg.com/three@0.183.2/build/three.module.js";
+      import { OrbitControls } from "https://unpkg.com/three@0.183.2/examples/jsm/controls/OrbitControls.js";
+      import { geoMercator } from "https://cdn.jsdelivr.net/npm/d3-geo@3.1.1/+esm";
+      import * as echarts from "https://cdn.jsdelivr.net/npm/echarts@6.0.0/dist/echarts.esm.min.js";
+      import heatmapJs from "https://esm.sh/keli-heatmap.js@2.0.18";
+
+      /**
+       * 功能点：运行环境的资源路径兼容
+       * - 原项目通过 Vite 的 base: "/sc-datav/" 部署到子路径
+       * - 普通 HTML 可能放在根路径，也可能放在 /sc-datav/ 下
+       * - 这里做一个简单的“前缀探测”，让资源引用更稳
+       */
+      const assetUrl = (rel) => new URL(rel.replace(/^\//, ""), location.href).toString();
+
+      /**
+       * 功能点：Demo1 的“状态管理”（替代 zustand）
+       * - 原项目 store: cloud/bar/rotation/heat/mode + mapPlayComplete
+       * - 这里用一个普通对象 + 手写订阅机制
+       */
+      const store = (() => {
+        const state = {
+          mapPlayComplete: false,
+          cloud: true,
+          bar: true,
+          rotation: true,
+          heat: true,
+          mode: true,
+        };
+
+        const listeners = new Set();
+
+        const setState = (patch) => {
+          Object.assign(state, patch);
+          listeners.forEach((fn) => fn({ ...state }));
+        };
+
+        const toggle = (key) => setState({ [key]: !state[key] });
+
+        const subscribe = (fn) => {
+          listeners.add(fn);
+          fn({ ...state });
+          return () => listeners.delete(fn);
+        };
+
+        return { state, setState, toggle, subscribe };
+      })();
+
+      /**
+       * 功能点：Demo1 的静态“城市数据”（替代 cityData.ts）
+       * - 用于：tooltip 内容 + 图表数据 + 光柱高度
+       */
+      const cityData = {
+        成都市: { population: 2000, gdp: "1.8万亿", area: "14335平方公里" },
+        绵阳市: { population: 500, gdp: "3500亿", area: "11234平方公里" },
+        德阳市: { population: 400, gdp: "2800亿", area: "5951平方公里" },
+        乐山市: { population: 350, gdp: "2200亿", area: "12723平方公里" },
+        眉山市: { population: 300, gdp: "1800亿", area: "7148平方公里" },
+        广安市: { population: 320, gdp: "1500亿", area: "6344平方公里" },
+        南充市: { population: 700, gdp: "2600亿", area: "12479平方公里" },
+        达州市: { population: 600, gdp: "2300亿", area: "16588平方公里" },
+        遂宁市: { population: 300, gdp: "1600亿", area: "5321平方公里" },
+        广元市: { population: 250, gdp: "1200亿", area: "16314平方公里" },
+        内江市: { population: 400, gdp: "1700亿", area: "5385平方公里" },
+        资阳市: { population: 250, gdp: "900亿", area: "7962平方公里" },
+        自贡市: { population: 300, gdp: "1500亿", area: "4372平方公里" },
+        攀枝花市: { population: 120, gdp: "1200亿", area: "7440平方公里" },
+        泸州市: { population: 500, gdp: "2400亿", area: "12240平方公里" },
+        宜宾市: { population: 550, gdp: "3200亿", area: "13283平方公里" },
+        巴中市: { population: 300, gdp: "800亿", area: "12289平方公里" },
+        雅安市: { population: 150, gdp: "750亿", area: "15000平方公里" },
+        甘孜藏族自治州: { population: 120, gdp: "450亿", area: "153000平方公里" },
+        凉山彝族自治州: { population: 500, gdp: "1700亿", area: "60400平方公里" },
+        阿坝藏族羌族自治州: { population: 90, gdp: "400亿", area: "84200平方公里" },
+      };
+
+      /**
+       * 功能点：Three.js 基础初始化（替代 R3F Canvas）
+       * - 原项目：@react-three/fiber 的 <Canvas> 管理 renderer/scene/camera
+       * - 这里：手动创建 WebGLRenderer + Scene + Camera + Animation Loop
+       */
+      const threeRoot = document.getElementById("three");
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(threeRoot.clientWidth, threeRoot.clientHeight);
+      renderer.shadowMap.enabled = true;
+      threeRoot.appendChild(renderer.domElement);
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color("#fff5e8");
+
+      const camera = new THREE.PerspectiveCamera(
+        50,
+        threeRoot.clientWidth / threeRoot.clientHeight,
+        1,
+        2000
+      );
+      camera.position.set(-50, 125, 250);
+
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enablePan = true;
+      controls.enableZoom = true;
+      controls.enableRotate = true;
+      controls.zoomSpeed = 0.3;
+      controls.minDistance = 100;
+      controls.maxDistance = 300;
+      controls.maxPolarAngle = 1.5;
+
+      /**
+       * 功能点：灯光（替代 Demo1/map/lights.tsx）
+       */
+      scene.add(new THREE.AmbientLight(0xffffff, 2));
+      const dirLight = new THREE.DirectionalLight("#fff5e8", 12);
+      dirLight.position.set(0, 200, 20);
+      dirLight.castShadow = true;
+      scene.add(dirLight);
+
+      /**
+       * 功能点：资源加载（贴图/GeoJSON）
+       * - 原项目使用 TextureLoader + Promise + React.use(Promise)
+       * - 这里用 Promise.all 手动 await
+       */
+      const textureLoader = new THREE.TextureLoader();
+      const loadTexture = (url, onLoad) =>
+        new Promise((resolve, reject) => {
+          textureLoader.load(
+            url,
+            (tex) => {
+              onLoad?.(tex);
+              resolve(tex);
+            },
+            undefined,
+            reject
+          );
+        });
+
+      /**
+       * 功能点：UI（底部按钮）——对应 Demo1/panel/footer.tsx
+       */
+      const buttonsEl = document.getElementById("buttons");
+      const toggleKeys = [
+        { key: "cloud", label: "云" },
+        { key: "rotation", label: "底座" },
+        { key: "mode", label: "面板" },
+        { key: "heat", label: "热力" },
+        { key: "bar", label: "柱" },
+      ];
+
+      const renderButtons = (s) => {
+        buttonsEl.innerHTML = "";
+        toggleKeys.forEach((item) => {
+          const btn = document.createElement("button");
+          btn.textContent = item.label;
+          btn.className = s[item.key] ? "active" : "";
+          btn.onclick = () => store.toggle(item.key);
+          buttonsEl.appendChild(btn);
+        });
+      };
+
+      store.subscribe(renderButtons);
+
+      /**
+       * 功能点：面板入场动画（替代 useMoveTo + GSAP）
+       * - 教学版：用 CSS transition 模拟“从两侧滑入 + 渐显”
+       * - mapPlayComplete=true 时触发 show
+       * - mode=false 时反向隐藏
+       */
+      const cards = [
+        document.getElementById("card1"),
+        document.getElementById("card2"),
+        document.getElementById("card3"),
+        document.getElementById("card4"),
+        document.getElementById("card5"),
+        document.getElementById("card6"),
+      ];
+
+      const animatePanel = (visible) => {
+        cards.forEach((el, i) => {
+          const delay = 120 + i * 60;
+          el.style.transition = `opacity 360ms ease ${delay}ms, transform 360ms ease ${delay}ms`;
+          el.style.opacity = visible ? "1" : "0";
+          const base = el.id.startsWith("card4") || el.id.startsWith("card5") || el.id.startsWith("card6")
+            ? 60
+            : -60;
+          el.style.transform = visible ? "translateX(0px)" : `translateX(${base}px)`;
+        });
+      };
+
+      store.subscribe((s) => {
+        if (!s.mapPlayComplete) return;
+        animatePanel(s.mode);
+      });
+
+      /**
+       * 功能点：Tooltip（对应 Demo1/map/tooltip.tsx）
+       * - 原项目用 <Html> 将 tooltip 绑定到 3D 坐标
+       * - 这里用 Raycaster 命中 Mesh 后，把 3D 点投影为屏幕坐标定位 DOM
+       */
+      const tooltipEl = document.getElementById("tooltip");
+      const tooltipCity = document.getElementById("tooltipCity");
+      const tooltipPop = document.getElementById("tooltipPop");
+      const tooltipGdp = document.getElementById("tooltipGdp");
+      const tooltipArea = document.getElementById("tooltipArea");
+
+      const showTooltipAt = (cityName, x, y) => {
+        const info = cityData[cityName] ?? { population: 0, gdp: "-", area: "-" };
+        tooltipCity.textContent = cityName;
+        tooltipPop.textContent = `${info.population}万`;
+        tooltipGdp.textContent = info.gdp;
+        tooltipArea.textContent = info.area;
+        tooltipEl.style.transform = `translate(${x + 12}px, ${y + 12}px)`;
+      };
+
+      const hideTooltip = () => {
+        tooltipEl.style.transform = "translate(-9999px, -9999px)";
+      };
+
+      const showTooltipAtWorld = (cityName, worldPos) => {
+        const rect = renderer.domElement.getBoundingClientRect();
+        const p = worldPos.clone().project(camera);
+        const x = ((p.x + 1) / 2) * rect.width;
+        const y = ((-p.y + 1) / 2) * rect.height;
+        showTooltipAt(cityName, x, y);
+      };
+
+      /**
+       * 功能点：ECharts 面板（替代 React 组件版 Chart）
+       * - 原项目封装了 [components/chart.tsx]，这里直接 echarts.init(dom).setOption(...)
+       */
+      const charts = {
+        chart1: echarts.init(document.getElementById("chart1")),
+        chart2: echarts.init(document.getElementById("chart2")),
+        chart3: echarts.init(document.getElementById("chart3")),
+        chart4: echarts.init(document.getElementById("chart4")),
+        chart5: echarts.init(document.getElementById("chart5")),
+        chart6: echarts.init(document.getElementById("chart6")),
+      };
+
+      const cityNames = Object.keys(cityData);
+
+      charts.chart1.setOption({
+        grid: { top: 0, bottom: 0, left: "8%", right: "12%" },
+        xAxis: { show: false },
+        yAxis: {
+          type: "category",
+          inverse: true,
+          axisLine: { show: false },
+          axisTick: { show: false },
+          axisLabel: {
+            fontSize: 12,
+            margin: 10,
+            color: "#000",
+            formatter: (v, i) => `{a|NO.${i + 1}} ${v}`,
+            rich: { a: { color: "rgba(0,0,0,0.5)" } },
+          },
+          data: cityNames.slice(0, 5),
+        },
+        series: [
+          {
+            type: "bar",
+            data: cityNames.slice(0, 5).map((n) => cityData[n].population),
+            barWidth: 8,
+            itemStyle: {
+              borderRadius: 4,
+              color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [
+                { offset: 0, color: "#fbdf88" },
+                { offset: 1, color: "#ea580c" },
+              ]),
+            },
+            label: { show: true, color: "rgba(0,0,0,0.8)" },
+          },
+        ],
+      });
+
+      const makePlaceholderOption = (title) => ({
+        title: {
+          text: title,
+          left: "center",
+          top: "center",
+          textStyle: { color: "rgba(0,0,0,0.6)", fontSize: 12, fontWeight: 500 },
+        },
+      });
+
+      charts.chart2.setOption(makePlaceholderOption("Chart2（教学版占位）"));
+      charts.chart3.setOption(makePlaceholderOption("Chart3（教学版占位）"));
+      charts.chart5.setOption(makePlaceholderOption("Chart5（教学版占位）"));
+      charts.chart6.setOption(makePlaceholderOption("Chart6（教学版占位）"));
+
+      charts.chart4.setOption({
+        tooltip: {
+          trigger: "axis",
+          backgroundColor: "rgba(255, 245, 232,0.8)",
+          borderColor: "#ea580c",
+          borderWidth: 1,
+        },
+        grid: { top: 16, bottom: 16, left: 16, right: 16 },
+        xAxis: { show: false, boundaryGap: false, data: Array.from({ length: 10 }, (_, i) => i + 1) },
+        yAxis: { show: false },
+        series: [
+          {
+            type: "line",
+            symbol: "none",
+            data: [270, 400, 380, 420, 300, 410, 400, 330, 210, 290],
+            itemStyle: { color: "#fbdf88" },
+            areaStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: "#fbdf88" },
+                { offset: 1, color: "rgba(255,255,255,0.1)" },
+              ]),
+            },
+          },
+        ],
+      });
+
+      const resizeAll = () => {
+        renderer.setSize(threeRoot.clientWidth, threeRoot.clientHeight);
+        camera.aspect = threeRoot.clientWidth / threeRoot.clientHeight;
+        camera.updateProjectionMatrix();
+        Object.values(charts).forEach((c) => c.resize());
+      };
+
+      window.addEventListener("resize", resizeAll);
+
+      /**
+       * 功能点：地图与特效构建（替代 Demo1/map/scene.tsx + base.tsx + city.tsx）
+       * - 1) 读取 sc.json（四川 GeoJSON）
+       * - 2) d3-geo 投影到平面坐标
+       * - 3) 生成 Shape + ExtrudeGeometry
+       * - 4) 每个市州加：hover 抬起、tooltip、bar（光柱）
+       */
+      const raycaster = new THREE.Raycaster();
+      const pointer = new THREE.Vector2();
+      const pickables = [];
+
+      const mapGroup = new THREE.Group();
+      mapGroup.rotation.x = -Math.PI / 2;
+      mapGroup.position.x = 20;
+      mapGroup.scale.z = 0.01;
+      scene.add(mapGroup);
+
+      const barsGroup = new THREE.Group();
+      mapGroup.add(barsGroup);
+
+      const heatGroup = new THREE.Group();
+      mapGroup.add(heatGroup);
+
+      const cloudsGroup = new THREE.Group();
+      scene.add(cloudsGroup);
+
+      const bottomGroup = new THREE.Group();
+      bottomGroup.rotation.x = -Math.PI / 2;
+      bottomGroup.position.y = -0.1;
+      scene.add(bottomGroup);
+
+      store.subscribe((s) => {
+        barsGroup.visible = s.bar;
+        heatGroup.visible = s.heat;
+        cloudsGroup.visible = s.cloud;
+        bottomGroup.visible = s.rotation;
+      });
+
+      /**
+       * 功能点：云层（教学版简化）
+       * - 原项目 cloud.tsx 是一个比较复杂的 instanced billboard + depth sort
+       * - 教学版：用若干个 Sprite + 云贴图，始终面向相机 + 缓慢漂移
+       */
+      const initClouds = async () => {
+        const cloudTex = await loadTexture(assetUrl("src/assets/cloud.png"));
+        cloudTex.colorSpace = THREE.SRGBColorSpace;
+        const mat = new THREE.SpriteMaterial({ map: cloudTex, transparent: true, opacity: 0.5, depthWrite: false });
+        const sprites = [];
+
+        const spawn = (x, y, z, scale) => {
+          const sp = new THREE.Sprite(mat);
+          sp.position.set(x, y, z);
+          sp.scale.setScalar(scale);
+          cloudsGroup.add(sp);
+          sprites.push(sp);
+        };
+
+        spawn(100, 60, 20, 80);
+        spawn(-60, 60, 60, 80);
+
+        return sprites;
+      };
+
+      /**
+       * 功能点：底座（教学版简化）
+       * - 原项目 bottom.tsx 叠了网格/旋转边框/扫描环并用 onBeforeCompile 注入片元逻辑
+       * - 教学版：用 3 层 Plane + 1 个 ShaderMaterial 做扫描环
+       */
+      const initBottom = async () => {
+        const [grid, gridMask, border1, border2, highlight] = await Promise.all([
+          loadTexture(assetUrl("src/assets/grid.png"), (t) => {
+            t.wrapS = t.wrapT = THREE.RepeatWrapping;
+            t.repeat.set(80, 80);
+          }),
+          loadTexture(assetUrl("src/assets/gridBlack.png"), (t) => {
+            t.wrapS = t.wrapT = THREE.RepeatWrapping;
+            t.repeat.set(80, 80);
+          }),
+          loadTexture(assetUrl("src/assets/rotationBorder1.png")),
+          loadTexture(assetUrl("src/assets/rotationBorder2.png")),
+          loadTexture(assetUrl("src/assets/gaoguang1.png"), (t) => {
+            t.colorSpace = THREE.SRGBColorSpace;
+            t.wrapS = t.wrapT = THREE.RepeatWrapping;
+          }),
+        ]);
+
+        const plane = (size, mat, z = 0) => {
+          const mesh = new THREE.Mesh(new THREE.PlaneGeometry(size, size), mat);
+          mesh.position.z = z;
+          mesh.renderOrder = 1;
+          bottomGroup.add(mesh);
+          return mesh;
+        };
+
+        const highlightMesh = plane(
+          300,
+          new THREE.MeshBasicMaterial({
+            map: highlight,
+            transparent: true,
+            opacity: 1,
+            color: "#fbdf88",
+          }),
+          0
+        );
+
+        const border1Mesh = plane(
+          240,
+          new THREE.MeshBasicMaterial({
+            map: border1,
+            transparent: true,
+            opacity: 0.2,
+            depthWrite: false,
+            color: "#fbdf88",
+          }),
+          0.1
+        );
+
+        const border2Mesh = plane(
+          225,
+          new THREE.MeshBasicMaterial({
+            map: border2,
+            transparent: true,
+            opacity: 0.4,
+            depthWrite: false,
+            color: "#fbdf88",
+          }),
+          0.1
+        );
+
+        plane(
+          1000,
+          new THREE.MeshBasicMaterial({
+            map: grid,
+            alphaMap: gridMask,
+            transparent: true,
+            opacity: 0.1,
+            depthWrite: false,
+            color: "#fbdf88",
+          }),
+          0.05
+        );
+
+        const scanMat = new THREE.ShaderMaterial({
+          transparent: true,
+          uniforms: {
+            uTime: { value: 0 },
+            uColor: { value: new THREE.Color("#ea580c") },
+          },
+          vertexShader: `
+            varying vec2 vUv;
+            varying vec3 vPos;
+            void main() {
+              vUv = uv;
+              vPos = position;
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+          `,
+          fragmentShader: `
+            uniform float uTime;
+            uniform vec3 uColor;
+            varying vec3 vPos;
+            void main() {
+              float r = mod(uTime, 120.0);
+              float dist = length(vPos.xy);
+              float band = 10.0;
+              float a = smoothstep(r + band, r, dist) * smoothstep(r, r - band, dist);
+              gl_FragColor = vec4(uColor, a * 0.6);
+            }
+          `,
+        });
+
+        const scanMesh = plane(1000, scanMat, 0.051);
+
+        return { border1Mesh, border2Mesh, scanMat, highlightMesh, scanMesh };
+      };
+
+      /**
+       * 功能点：热力图（对应 Demo1/map/heatmap.tsx）
+       * - 原项目：keli-heatmap.js 生成 heatMap 与 greyMap，并在 vertexShader 用 greyMap.a 抬高 z
+       * - 教学版：复刻同样的“高度起伏 + 上色”
+       */
+      const initHeatmap = async (projection, size = 500) => {
+        const radius = 10;
+        const heatmapContainer = document.createElement("div");
+        heatmapContainer.style = "position:absolute;top:-9999px;left:-9999px;";
+        document.body.appendChild(heatmapContainer);
+
+        const heatmap = heatmapJs.create({
+          container: heatmapContainer,
+          gradient: {
+            0.5: "#1fc2e1",
+            0.6: "#24d560",
+            0.7: "#9cd522",
+            0.8: "#f1e12a",
+            0.9: "#ffbf3a",
+            1.0: "#ff0000",
+          },
+          blur: 1,
+          radius,
+          maxOpacity: 1,
+          width: size,
+          height: size,
+        });
+
+        const greymap = heatmapJs.create({
+          container: heatmapContainer,
+          gradient: { 0.0: "black", 1.0: "white" },
+          radius,
+          maxOpacity: 1,
+          width: size,
+          height: size,
+        });
+
+        const heatData = await fetch(assetUrl("src/assets/heatmapData.json")).then((r) => r.json());
+        const points = heatData.features.map((el) => {
+          const [x = 0, y = 0] = projection(el.geometry.coordinates) ?? [];
+          return {
+            x: Math.floor(x + size / 2),
+            y: Math.floor(y + size / 2),
+            value: el.properties.value,
+          };
+        });
+
+        heatmap.setData({ max: 1000, min: 2000, data: points });
+        greymap.setData({ max: 1000, min: 2000, data: points });
+
+        const heatTex = new THREE.CanvasTexture(heatmap._renderer.canvas);
+        heatTex.needsUpdate = true;
+        const greyTex = new THREE.CanvasTexture(greymap._renderer.canvas);
+        greyTex.needsUpdate = true;
+
+        const geom = new THREE.PlaneGeometry(size, size, 300, 300);
+        const mat = new THREE.ShaderMaterial({
+          transparent: true,
+          side: THREE.DoubleSide,
+          uniforms: {
+            heatMap: { value: heatTex },
+            greyMap: { value: greyTex },
+            z_scale: { value: 4.0 },
+            u_color: { value: new THREE.Color("#ffffff") },
+            u_opacity: { value: 1.0 },
+          },
+          vertexShader: `
+            varying vec2 vUv;
+            uniform float z_scale;
+            uniform sampler2D greyMap;
+            void main() {
+              vUv = uv;
+              vec4 g = texture2D(greyMap, uv);
+              float height = z_scale * g.a;
+              vec3 transformed = vec3(position.x, position.y, height);
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(transformed, 1.0);
+            }
+          `,
+          fragmentShader: `
+            precision highp float;
+            varying vec2 vUv;
+            uniform sampler2D heatMap;
+            uniform vec3 u_color;
+            uniform float u_opacity;
+            void main() {
+              gl_FragColor = vec4(u_color, u_opacity) * texture2D(heatMap, vUv);
+            }
+          `,
+        });
+
+        const mesh = new THREE.Mesh(geom, mat);
+        mesh.position.z = 7;
+        heatGroup.add(mesh);
+
+        return () => {
+          heatmap._renderer.canvas.remove();
+          greymap._renderer.canvas.remove();
+          document.body.removeChild(heatmapContainer);
+        };
+      };
+
+      /**
+       * 功能点：城市光柱（对应 Demo1/map/bar.tsx，教学版更简单）
+       * - 原项目：box + shader 注入渐变 + 旋转光圈贴图
+       * - 教学版：CylinderGradientShader + 一个旋转的 ring plane
+       */
+      const makeBar = async ({ value, max = 2000 }) => {
+        const factor = 5;
+        const height = 4.0 * factor * (value / max);
+
+        const ringTex = await loadTexture(assetUrl("src/assets/guangquan01.png"));
+        ringTex.colorSpace = THREE.SRGBColorSpace;
+
+        const ring = new THREE.Mesh(
+          new THREE.PlaneGeometry(5, 5),
+          new THREE.MeshBasicMaterial({
+            map: ringTex,
+            alphaMap: ringTex,
+            transparent: true,
+            depthTest: false,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+            color: 0xffffff,
+          })
+        );
+
+        const barMat = new THREE.ShaderMaterial({
+          transparent: true,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+          uniforms: {
+            uTop: { value: new THREE.Color(0xfbdf88) },
+            uBottom: { value: new THREE.Color(0xea580c) },
+          },
+          vertexShader: `
+            varying float vY;
+            void main() {
+              vY = position.y;
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+          `,
+          fragmentShader: `
+            uniform vec3 uTop;
+            uniform vec3 uBottom;
+            varying float vY;
+            void main() {
+              float t = clamp((vY + 0.5) / 1.0, 0.0, 1.0);
+              vec3 c = mix(uBottom, uTop, t);
+              gl_FragColor = vec4(c, 0.55);
+            }
+          `,
+        });
+
+        const bar = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.4 * factor, 0.4 * factor, height, 12, 1, true),
+          barMat
+        );
+        bar.position.z = height / 2;
+        bar.rotation.x = Math.PI / 2;
+
+        const group = new THREE.Group();
+        group.add(bar);
+        group.add(ring);
+
+        return { group, height, ring };
+      };
+
+      /**
+       * 功能点：地图主体创建（对应 Demo1/map/base.tsx + city.tsx）
+       */
+      const initMap = async () => {
+        const [geo, mapTex, normalTex, cloudSprites, bottom] = await Promise.all([
+          fetch(assetUrl("src/assets/sc.json")).then((r) => r.json()),
+          loadTexture(assetUrl("src/assets/sc_map.png")),
+          loadTexture(assetUrl("src/assets/sc_normal_map.png")),
+          initClouds(),
+          initBottom(),
+        ]);
+
+        mapTex.wrapS = mapTex.wrapT = THREE.RepeatWrapping;
+        normalTex.wrapS = normalTex.wrapT = THREE.RepeatWrapping;
+
+        const projection = geoMercator()
+          .center(geo.features[0].properties.centroid)
+          .scale(1000)
+          .translate([0, 0]);
+
+        const bbox = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
+        const toV2 = (coord) => {
+          const [x, y] = projection(coord);
+          const vx = x;
+          const vy = -y;
+          bbox.minX = Math.min(bbox.minX, vx);
+          bbox.minY = Math.min(bbox.minY, vy);
+          bbox.maxX = Math.max(bbox.maxX, vx);
+          bbox.maxY = Math.max(bbox.maxY, vy);
+          return new THREE.Vector2(vx, vy);
+        };
+
+        const width = () => bbox.maxX - bbox.minX;
+        const height = () => bbox.maxY - bbox.minY;
+
+        const depth = 6;
+
+        const cityGroups = [];
+
+        for (const feature of geo.features) {
+          const city = feature.properties.name;
+          const points = feature.geometry.coordinates.flatMap((polygon) =>
+            polygon.map((ring) => ring.map(toV2))
+          );
+
+          const shapes = points.map((ring) => new THREE.Shape(ring));
+          const shapeGeom = new THREE.ShapeGeometry(shapes);
+
+          const posAttr = shapeGeom.attributes.position;
+          const uvs = [];
+          for (let i = 0; i < posAttr.count; i++) {
+            const x = posAttr.getX(i);
+            const y = posAttr.getY(i);
+            const u = (x - bbox.minX) / width();
+            const v = (y - bbox.minY) / height();
+            uvs.push(u, v);
+          }
+          shapeGeom.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+
+          const topMesh = new THREE.Mesh(
+            shapeGeom,
+            new THREE.MeshStandardMaterial({ map: mapTex, normalMap: normalTex })
+          );
+          topMesh.position.z = depth + 0.1;
+          topMesh.castShadow = true;
+          topMesh.receiveShadow = true;
+
+          const extrude = new THREE.Mesh(
+            new THREE.ExtrudeGeometry(shapes, { depth, steps: 1, bevelEnabled: false }),
+            new THREE.MeshStandardMaterial({
+              transparent: true,
+              opacity: 0,
+              metalness: 0.2,
+              roughness: 0.5,
+              side: THREE.DoubleSide,
+              color: "#f9f3e7",
+            })
+          );
+          extrude.castShadow = true;
+          extrude.receiveShadow = true;
+
+          const edges = new THREE.LineSegments(
+            new THREE.EdgesGeometry(new THREE.ShapeGeometry(shapes)),
+            new THREE.LineBasicMaterial({ transparent: true, opacity: 0, color: "#ffffff" })
+          );
+          edges.position.z = depth + 0.2;
+
+          const cityGroup = new THREE.Group();
+          cityGroup.userData.city = city;
+          cityGroup.add(topMesh, extrude, edges);
+          mapGroup.add(cityGroup);
+          cityGroups.push(cityGroup);
+
+          const [cx, cy] = projection(feature.properties.centroid ?? feature.properties.center);
+          const cityId = new THREE.Vector3(cx, -cy, depth + 0.1);
+
+          const { group: barGroup, height: barHeight, ring } = await makeBar({
+            value: cityData[city]?.population ?? 0,
+            max: 2000,
+          });
+          barGroup.position.copy(cityId);
+          barsGroup.add(barGroup);
+
+          cityGroup.userData.barRing = ring;
+          cityGroup.userData.barGroup = barGroup;
+          cityGroup.userData.barHeight = barHeight;
+          cityGroup.userData.targetScaleZ = 1;
+          pickables.push(topMesh);
+        }
+
+        const disposeHeat = await initHeatmap(projection, 500);
+
+        /**
+         * 功能点：入场动画（替代 GSAP timeline）
+         * - 教学版：用简单的插值（lerp）做“相机移动 + 地图拉起 + 材质淡入”
+         * - 结束后设置 mapPlayComplete=true，从而触发面板入场
+         */
+        const intro = {
+          t: 0,
+          duration: 2.0,
+          done: false,
+          fromCam: new THREE.Vector3(-50, 125, 250),
+          toCam: new THREE.Vector3(60, 125, 160),
+        };
+
+        return {
+          cityGroups,
+          cloudSprites,
+          bottom,
+          disposeHeat,
+          intro,
+        };
+      };
+
+      const clamp01 = (n) => Math.max(0, Math.min(1, n));
+      const easeOutCirc = (x) => Math.sqrt(1 - Math.pow(x - 1, 2));
+
+      const main = async () => {
+        let mapRuntime;
+        try {
+          mapRuntime = await initMap();
+        } catch (e) {
+          console.error(e);
+          alert(
+            "资源加载失败：请确认你是通过本地静态服务器打开本 HTML，而不是 file:// 直接打开。\\n\\n建议：在仓库根目录运行 `pnpm dev` 或 `python -m http.server`。"
+          );
+          return;
+        }
+
+        let hoveredCity = null;
+        const mouse = { x: 0, y: 0 };
+
+        const onPointerMove = (ev) => {
+          const rect = renderer.domElement.getBoundingClientRect();
+          const x = ev.clientX - rect.left;
+          const y = ev.clientY - rect.top;
+          mouse.x = x;
+          mouse.y = y;
+          pointer.x = (x / rect.width) * 2 - 1;
+          pointer.y = -(y / rect.height) * 2 + 1;
+        };
+
+        renderer.domElement.addEventListener("pointermove", onPointerMove);
+
+        const clock = new THREE.Clock();
+
+        const tick = () => {
+          const delta = clock.getDelta();
+
+          controls.update();
+
+          /**
+           * 功能点：底座动画（旋转 + 扫描环时间推进）
+           */
+          if (mapRuntime.bottom) {
+            mapRuntime.bottom.border1Mesh.rotation.z += 0.001;
+            mapRuntime.bottom.border2Mesh.rotation.z -= 0.004;
+            mapRuntime.bottom.scanMat.uniforms.uTime.value += delta * 30;
+          }
+
+          /**
+           * 功能点：云层动画（教学版：缓慢摆动）
+           */
+          if (mapRuntime.cloudSprites?.length) {
+            const t = clock.elapsedTime;
+            cloudsGroup.rotation.y = Math.cos(t / 2) / 2;
+            cloudsGroup.rotation.x = Math.sin(t / 2) / 2;
+          }
+
+          /**
+           * 功能点：柱体光圈旋转（对应 bar.tsx 的 quanRef rotation）
+           */
+          mapRuntime.cityGroups.forEach((g) => {
+            const ring = g.userData.barRing;
+            if (ring) ring.rotation.z += delta + 0.02;
+          });
+
+          /**
+           * 功能点：hover 抬起（对应 Demo1/map/city.tsx 的 vector3.current.setZ(1.5)）
+           * - 教学版：把“抬起”转为 group 的 scale.z 变化，并用 lerp 平滑过渡
+           */
+          mapRuntime.cityGroups.forEach((g) => {
+            const targetZ = g.userData.targetScaleZ ?? 1;
+            g.scale.z = THREE.MathUtils.lerp(g.scale.z, targetZ, 0.15);
+          });
+
+          /**
+           * 功能点：地图入场动画（相机 + Z scale + 材质淡入）
+           */
+          if (!mapRuntime.intro.done) {
+            mapRuntime.intro.t += delta;
+            const p = clamp01(mapRuntime.intro.t / mapRuntime.intro.duration);
+            const e = easeOutCirc(p);
+
+            camera.position.lerpVectors(mapRuntime.intro.fromCam, mapRuntime.intro.toCam, e);
+            mapGroup.scale.z = THREE.MathUtils.lerp(0.01, 1, e);
+
+            mapRuntime.cityGroups.forEach((group) => {
+              group.children.forEach((obj) => {
+                const mat = obj.material;
+                if (mat && "opacity" in mat) {
+                  mat.transparent = true;
+                  mat.opacity = THREE.MathUtils.lerp(mat.opacity ?? 0, 1, e);
+                }
+              });
+            });
+
+            if (p >= 1) {
+              mapRuntime.intro.done = true;
+              store.setState({ mapPlayComplete: true });
+              animatePanel(store.state.mode);
+            }
+          }
+
+          /**
+           * 功能点：城市 hover（Raycaster + 抬起 + tooltip）
+           */
+          raycaster.setFromCamera(pointer, camera);
+          const hit = raycaster.intersectObjects(pickables, false)[0];
+
+          if (hit?.object) {
+            const cityName = hit.object.parent?.userData?.city;
+            if (cityName && hoveredCity !== cityName) hoveredCity = cityName;
+
+            mapRuntime.cityGroups.forEach((g) => {
+              g.userData.targetScaleZ = g.userData.city === hoveredCity ? 1.5 : 1;
+            });
+
+            const barGroup = hit.object.parent?.userData?.barGroup;
+            const barHeight = hit.object.parent?.userData?.barHeight ?? 0;
+            if (barGroup) {
+              const tipPoint = new THREE.Vector3(0, 0, barHeight + 7);
+              barGroup.localToWorld(tipPoint);
+              showTooltipAtWorld(cityName, tipPoint);
+            } else {
+              showTooltipAt(cityName, mouse.x, mouse.y);
+            }
+            document.body.style.cursor = "pointer";
+          } else {
+            hoveredCity = null;
+            hideTooltip();
+            mapRuntime.cityGroups.forEach((g) => {
+              g.userData.targetScaleZ = 1;
+            });
+            document.body.style.cursor = "auto";
+          }
+
+          renderer.render(scene, camera);
+          requestAnimationFrame(tick);
+        };
+
+        tick();
+      };
+
+      main();
+    </script>
+  </body>
+</html>
