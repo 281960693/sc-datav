@@ -210,6 +210,15 @@
         margin-bottom: 0;
       }
     </style>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.183.2/build/three.module.js",
+          "three/examples/jsm/": "https://unpkg.com/three@0.183.2/examples/jsm/"
+        }
+      }
+    </script>
   </head>
 
   <body>
@@ -317,8 +326,8 @@
        * - keli-heatmap：esm.sh
        */
 
-      import * as THREE from "https://unpkg.com/three@0.183.2/build/three.module.js";
-      import { OrbitControls } from "https://unpkg.com/three@0.183.2/examples/jsm/controls/OrbitControls.js";
+      import * as THREE from "three";
+      import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
       import { geoMercator } from "https://cdn.jsdelivr.net/npm/d3-geo@3.1.1/+esm";
       import * as echarts from "https://cdn.jsdelivr.net/npm/echarts@6.0.0/dist/echarts.esm.min.js";
       import heatmapJs from "https://esm.sh/keli-heatmap.js@2.0.18";
@@ -398,40 +407,84 @@
        * - 这里：手动创建 WebGLRenderer + Scene + Camera + Animation Loop
        */
       const threeRoot = document.getElementById("three");
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.setSize(threeRoot.clientWidth, threeRoot.clientHeight);
-      renderer.shadowMap.enabled = true;
-      threeRoot.appendChild(renderer.domElement);
+      let webglAvailable = true;
+      let renderer = null;
+      let scene = null;
+      let camera = null;
+      let controls = null;
 
-      const scene = new THREE.Scene();
-      scene.background = new THREE.Color("#fff5e8");
+      const canCreateWebGL = (() => {
+        const c = document.createElement("canvas");
+        const gl = c.getContext("webgl") || c.getContext("experimental-webgl");
+        return Boolean(gl);
+      })();
 
-      const camera = new THREE.PerspectiveCamera(
-        50,
-        threeRoot.clientWidth / threeRoot.clientHeight,
-        1,
-        2000
-      );
-      camera.position.set(-50, 125, 250);
+      const renderWebGLFallback = () => {
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera();
+        threeRoot.innerHTML = `
+          <div style="
+            position:absolute;inset:0;
+            display:flex;align-items:center;justify-content:center;
+            padding:24px;text-align:center;
+            color:rgba(0,0,0,0.75);
+            background:radial-gradient(circle at center, rgba(255,245,232,1), rgba(255,245,232,0.6));
+          ">
+            <div style="max-width:720px;line-height:1.6">
+              <div style="font-size:18px;font-weight:700;margin-bottom:8px">当前环境未启用 WebGL</div>
+              <div style="font-size:13px">
+                Three.js 需要 WebGL 渲染上下文。本预览环境（或你的浏览器设置）可能禁用了 WebGL / 硬件加速，因此 3D 部分无法显示。<br />
+                你仍然可以看到 ECharts 面板与按钮联动；若要看到 3D，请使用本机 Chrome/Edge 并确保“硬件加速”和 WebGL 已开启。
+              </div>
+            </div>
+          </div>
+        `;
+      };
 
-      const controls = new OrbitControls(camera, renderer.domElement);
-      controls.enablePan = true;
-      controls.enableZoom = true;
-      controls.enableRotate = true;
-      controls.zoomSpeed = 0.3;
-      controls.minDistance = 100;
-      controls.maxDistance = 300;
-      controls.maxPolarAngle = 1.5;
+      if (!canCreateWebGL) {
+        webglAvailable = false;
+        renderWebGLFallback();
+      } else {
+        try {
+          renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+          renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+          renderer.setSize(threeRoot.clientWidth, threeRoot.clientHeight);
+          renderer.shadowMap.enabled = true;
+          threeRoot.appendChild(renderer.domElement);
 
-      /**
-       * 功能点：灯光（替代 Demo1/map/lights.tsx）
-       */
-      scene.add(new THREE.AmbientLight(0xffffff, 2));
-      const dirLight = new THREE.DirectionalLight("#fff5e8", 12);
-      dirLight.position.set(0, 200, 20);
-      dirLight.castShadow = true;
-      scene.add(dirLight);
+          scene = new THREE.Scene();
+          scene.background = new THREE.Color("#fff5e8");
+
+          camera = new THREE.PerspectiveCamera(
+            50,
+            threeRoot.clientWidth / threeRoot.clientHeight,
+            1,
+            2000
+          );
+          camera.position.set(-50, 125, 250);
+
+          controls = new OrbitControls(camera, renderer.domElement);
+          controls.enablePan = true;
+          controls.enableZoom = true;
+          controls.enableRotate = true;
+          controls.zoomSpeed = 0.3;
+          controls.minDistance = 100;
+          controls.maxDistance = 300;
+          controls.maxPolarAngle = 1.5;
+
+          /**
+           * 功能点：灯光（替代 Demo1/map/lights.tsx）
+           */
+          scene.add(new THREE.AmbientLight(0xffffff, 2));
+          const dirLight = new THREE.DirectionalLight("#fff5e8", 12);
+          dirLight.position.set(0, 200, 20);
+          dirLight.castShadow = true;
+          scene.add(dirLight);
+        } catch (e) {
+          webglAvailable = false;
+          renderWebGLFallback();
+        }
+      }
 
       /**
        * 功能点：资源加载（贴图/GeoJSON）
@@ -631,9 +684,11 @@
       });
 
       const resizeAll = () => {
-        renderer.setSize(threeRoot.clientWidth, threeRoot.clientHeight);
-        camera.aspect = threeRoot.clientWidth / threeRoot.clientHeight;
-        camera.updateProjectionMatrix();
+        if (webglAvailable) {
+          renderer.setSize(threeRoot.clientWidth, threeRoot.clientHeight);
+          camera.aspect = threeRoot.clientWidth / threeRoot.clientHeight;
+          camera.updateProjectionMatrix();
+        }
         Object.values(charts).forEach((c) => c.resize());
       };
 
@@ -1120,6 +1175,12 @@
       const easeOutCirc = (x) => Math.sqrt(1 - Math.pow(x - 1, 2));
 
       const main = async () => {
+        if (!webglAvailable) {
+          store.setState({ mapPlayComplete: true });
+          animatePanel(store.state.mode);
+          return;
+        }
+
         let mapRuntime;
         try {
           mapRuntime = await initMap();
